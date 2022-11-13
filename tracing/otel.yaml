@@ -18,8 +18,9 @@ spec:
     spec:
       containers:
         - name: otel-collector
-          args:
-          - --config=/conf/otel-collector-config.yaml
+          command:
+            - "/otelcol"
+            - "--config=/conf/otel-collector-config.yaml"
           image: docker.io/otel/opentelemetry-collector:0.47.0
           ports:
             - containerPort: 1888
@@ -92,7 +93,7 @@ data:
       logging:
         logLevel: debug
       jaeger:
-        endpoint: http://jaeger-all-in-one.default.svc.cluster.local:14250
+        endpoint: "jaeger-all-in-one.default.svc.cluster.local:14250"
         tls:
           insecure: true
 
@@ -101,5 +102,5 @@ data:
         traces:
           receivers: [ otlp ]
           processors: [ batch ]
-          exporters: [ logging, jaeger ]
+          exporters: [ jaeger ]
       extensions: [ memory_ballast, zpages ]
