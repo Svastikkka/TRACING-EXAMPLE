@@ -1,0 +1,105 @@
+
+#deployment 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          args:
+          - --config=/conf/otel-collector-config.yaml
+          image: docker.io/otel/opentelemetry-collector:0.47.0
+          ports:
+            - containerPort: 1888
+            - containerPort: 13133
+            - containerPort: 4317
+            - containerPort: 55679     
+          volumeMounts:
+          - mountPath: /conf
+            name: otel-collector
+      volumes:
+      - configMap:
+          items:
+          - key: otel-collector-config.yaml
+            path: otel-collector-config.yaml
+          name: otel-collector
+        name: otel-collector 
+status: {}  
+---
+# service
+apiVersion: v1 
+kind: Service
+metadata:
+  name: otel-collector
+spec:
+  selector:
+    app: otel-collector
+  ports:
+  - protocol: TCP
+    name: "1888"
+    port: 1888
+    targetPort: 1888
+  - protocol: TCP
+    name: "13133"
+    port: 13133
+    targetPort: 13133
+  - protocol: TCP
+    name: "4317"
+    port: 4317
+    targetPort: 4317
+  - protocol: TCP
+    name: "55679"
+    port: 55679
+    targetPort: 55679
+  type: ClusterIP
+---
+
+# configmap
+apiVersion: v1 
+kind: ConfigMap
+metadata:
+  name: otel-collector
+data:
+  otel-collector-config.yaml: |
+    extensions:
+      memory_ballast:
+        size_mib: 512
+      zpages:
+        endpoint: 0.0.0.0:55679
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    processors:
+      batch:
+
+    exporters:
+      logging:
+        logLevel: debug
+      jaeger:
+        endpoint: http://jaeger-all-in-one.default.svc.cluster.local:14250
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        traces:
+          receivers: [ otlp ]
+          processors: [ batch ]
+          exporters: [ logging, jaeger ]
+      extensions: [ memory_ballast, zpages ]

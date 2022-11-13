@@ -1,0 +1,59 @@
+# jaeger-all-in-one
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger-all-in-one
+  labels:
+    app: jaeger-all-in-one
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger-all-in-one
+  template:
+    metadata:
+      labels:
+        app: jaeger-all-in-one
+    spec:
+      containers:
+        - name: jaeger-all-in-one
+          image: jaegertracing/all-in-one:latest
+          ports:
+            - containerPort: 16686
+            - containerPort: 14268
+            - containerPort: 14250
+          envFrom:
+          - configMapRef:
+              name: jaeger-all-in-one
+status: {}
+---
+# jaeger-all-in-one
+apiVersion: v1 
+kind: Service
+metadata:
+  name: jaeger-all-in-one
+spec:
+  selector:
+    app: jaeger-all-in-one
+  ports:
+  - protocol: TCP
+    name: "16686"
+    port: 16686
+    targetPort: 16686
+  - protocol: TCP
+    name: "14268"
+    port: 14268
+    targetPort: 14268
+  - protocol: TCP
+    name: "14250"
+    port: 14250
+    targetPort: 14250
+  type: ClusterIP
+---
+# jaeger-all-in-one
+apiVersion: v1 
+kind: ConfigMap
+metadata:
+  name: jaeger-all-in-one
+data:
+  test: "test"

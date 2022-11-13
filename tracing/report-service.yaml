@@ -1,0 +1,55 @@
+# report-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: report-service
+  labels:
+    app: report-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: report-service
+  template:
+    metadata:
+      labels:
+        app: report-service
+    spec:
+      containers:
+        - name: report-service
+          image: docker.io/aditi999/report-service:latest
+          ports:
+            - containerPort: 8081
+          envFrom:
+          - configMapRef:
+              name: report-service-config
+status: {}
+---
+# customer-service
+apiVersion: v1 
+kind: ConfigMap
+metadata:
+  name: report-service-config
+data:
+  test: "test"
+#  SERVICES_CUSTOMER-SERVICE-BFF_URL: "http://customer-service-bff.default.svc.cluster.local:8080"
+#  SERVICES_ORDER-SERVICE_URL: "http://order-service.default.svc.cluster.local:8082"
+#  SPRING_SLEUTH_OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.default.svc.cluster.local:4317"
+  SPRING_KAFKA_PRODUCER_BOOTSTRAP-SERVERS: "nightly-kafka:9092"
+  SPRING_KAFKA_PRODUCER_GROUP-ID: "emails"
+  SPRING_KAFKA_PRODUCER_TOPIC: "reports"
+#  SPRING_DATASOURCE_JDBC-URL: "jdbc:postgresql://postgres-customer.default.svc.cluster.local:5432/customerservice"
+---
+# report-service
+apiVersion: v1 
+kind: Service
+metadata:
+  name: report-service
+spec:
+  selector:
+    app: report-service
+  ports:
+  - protocol: TCP
+    port: 8081
+    targetPort: 8081
+  type: ClusterIP

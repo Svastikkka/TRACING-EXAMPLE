@@ -1,0 +1,56 @@
+#email-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-service
+  labels:
+    app: email-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: email-service
+  template:
+    metadata:
+      labels:
+        app: email-service
+    spec:
+      containers:
+        - name: email-service
+          image: docker.io/aditi999/email-service:latest
+          ports:
+            - containerPort: 8082
+          envFrom:
+          - configMapRef:
+              name: email-service-config
+status: {}
+---
+# order-service
+apiVersion: v1 
+kind: ConfigMap
+metadata:
+  name: email-service-config
+data:
+  test: "test"
+#  SERVICES_CUSTOMER-SERVICE-BFF_URL: "http://customer-service-bff.default.svc.cluster.local:8080"
+#  SERVICES_ORDER-SERVICE_URL: "http://order-service.default.svc.cluster.local:8082"
+#  SPRING_SLEUTH_OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.default.svc.cluster.local:4317"
+#  KAFKA_BOOTSTRAP: "kafka-uat.default.svc.cluster.local:9092"
+#  SPRING_DATASOURCE_JDBC-URL: "jdbc:postgresql://postgres-order.default.svc.cluster.local:5432/orderservice"
+  SPRING_KAFKA_CONSUMER_BOOTSTRAP-SERVERS: "nightly-kafka:9092"
+  SPRING_KAFKA_CONSUMER_GROUP-ID: "emails"
+  SPRING_KAFKA_CONSUMER_TOPIC: "reports"
+---
+# email-service
+apiVersion: v1 
+kind: Service
+metadata:
+  name: email-service
+spec:
+  selector:
+    app: email-service
+  ports:
+  - protocol: TCP
+    port: 8082
+    targetPort: 8082
+  type: ClusterIP
